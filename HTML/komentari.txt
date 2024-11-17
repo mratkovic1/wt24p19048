@@ -24,6 +24,8 @@ Razlike koje su napravljene:
 - Dodan je novi <div> element sa klasom nav-buttons, koji sadrži dva dugmeta i dodani su stilovi za navigacione dugmiće
 - Uvedene su media queries za različite širine ekrana
 - Box-sizing je dodan u .upit kako bi uključio padding u ukupnu širinu
+Ovdje sam shvatila da na 600px se prikazuje 1 upit samo ali nema buttona, tek ispod 600 pocinje s prikazivanjem uz 1 upit. 
+Na 601px su 2 upita, po 1 u redu i takvo prikazivanje je do 800px ukljucivo. Na 801px su po 2 upita u redu. Nisu jasno precizirane granice, tačnije, ovo oko 600px je data suprotna informacija pa sam ja ovako odredila.
 
 4. zadatak:
 
