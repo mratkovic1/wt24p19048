@@ -1,0 +1,33 @@
+1. zadatak: Pozitivne strane:
+Projekat koristi osnovni dizajn koji je jednostavan za upotrebu i razumijevanje. Boje i kontrast su dobro odabrani.
+
+Negativne strane:
+Nedostaju animacije i vizualni efekti u početnom projektu. Dodali smo ih naknadno. Bilo je teško kod animacija prekriti riječ "Nekretnine", bilo je dosta prilagođavanja.
+
+Promjene:
+- Dodala sam ikonice ispod naziva linkova u meniju radi boljeg korisničkog iskustva.
+- Implementirala sam animaciju uvećanja ikonice prilikom prelaska mišem s trajanjem od 1 sekunde.
+- Dodala sam link za `vijesti.html` u meni, kao što je navedeno u zadatku ali naknadno, kad sam završila 4. zadatak. 
+-Ikone za sve stranice imaju standardno povećanje (scale(3, 2)), osim stranice "Nekretnine" (scale(4.5, 2)).
+2. zadatak:
+
+Ako se već koristi mnogo sličnih stilova za .nekretnina, .nekretnina.kuca, .nekretnina.pp i sl., možemo imati zajednički stil da ne moramo na svakom mjestu ponovo ispravljati ako dođe do promjene.
+Razlike koje su napravljene:
+
+-Koristim Flexbox za raspored elemenata.
+-Elementi se prelamaju u novi red zahvaljujući flex-wrap: wrap.
+-Visina je fiksna na 467px da bih bolje prilagodila izgled
+-Koristim box-sizing: border-box kako bi padding i border bili uključeni u dimenzije.
+
+3. zadatak:
+
+- Dodan je novi <div> element sa klasom nav-buttons, koji sadrži dva dugmeta i dodani su stilovi za navigacione dugmiće
+- Uvedene su media queries za različite širine ekrana
+- Box-sizing je dodan u .upit kako bi uključio padding u ukupnu širinu
+
+4. zadatak:
+
+Ovo je bio najzahtevniji zadatak. Lahko je bilo napraviti "kostur" zadatka, međutim, bilo je teško napraviti pravilan raspored vijesti kao što ste prikazali na slici. 
+Na kraju sam vijesti posmatrala kao da su raspoređene u redove i kolone. Tkd mi je glavna vijest npr. zauzimala prva 2 reda sa 2 kolone. Visoke vijesti zauzimaju 2 reda, ali zauzimaju samo pola širine tj 1. kolonu.
+Trebalo je da se upravlja omjerima poput 1:1 za kvadratne vijesti i 2:1 za visoke vijesti bez da sadržaj izgubi proporcije. Bio je problem da mi vijesti ne iskaču iz rešetke (za manje ekrane pogotovo). Te kada trebam
+promijeniti visinu npr. neke vijesti da se ne desi preklapanje s nekom drugom ili da ne bude nekih praznina.

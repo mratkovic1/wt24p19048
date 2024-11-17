@@ -23,23 +23,7 @@ iframe {
     flex-wrap: wrap;         
     gap: 20px;               
     padding: 20px;            
-    justify-content: center;   
-}
-
-.grid-lista-nekretnina {
-    display: flex;          
-    flex-wrap: wrap;         
-    gap: 20px;                
-    padding: 20px;           
     justify-content: center;  
-}
-
-.grid-lista-nekretnina {
-    display: flex;             
-    flex-wrap: wrap;           
-    gap: 20px;                 
-    padding: 20px;            
-    justify-content: center;   
 }
 
 .nekretnina {
