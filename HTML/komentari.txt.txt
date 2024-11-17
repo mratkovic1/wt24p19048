@@ -1,30 +1,14 @@
 1. zadatak: Pozitivne strane:
-- Projekt koristi osnovni dizajn koji je jednostavan za upotrebu i razumijevanje. Boje i kontrast su dobro odabrani.
+Projekat koristi osnovni dizajn koji je jednostavan za upotrebu i razumijevanje. Boje i kontrast su dobro odabrani.
 
 Negativne strane:
-- Kod za stilizaciju menija je ponavljajući i mogao bi se optimizirati.
-- Nedostaju animacije i vizualni efekti u početnom projektu.
+Nedostaju animacije i vizualni efekti u početnom projektu. Dodali smo ih naknadno. Bilo je teško kod animacija prekriti riječ "Nekretnine", bilo je dosta prilagođavanja.
 
 Promjene:
-- Dodali smo ikonice ispod naziva linkova u meniju radi boljeg korisničkog iskustva.
-- Implementirali smo animaciju uvećanja ikonice prilikom prelaska mišem s trajanjem od 1 sekunde.
-- Dodali smo link za `vijesti.html` u meni, kao što je navedeno u zadatku.
+- Dodala sam ikonice ispod naziva linkova u meniju radi boljeg korisničkog iskustva.
+- Implementirala sam animaciju uvećanja ikonice prilikom prelaska mišem s trajanjem od 1 sekunde.
+- Dodala sam link za `vijesti.html` u meni, kao što je navedeno u zadatku ali naknadno, kad sam završila 4. zadatak. 
 
 2. zadatak:
-CSS optimizacija:
 
-Ako se koristi mnogo sličnih stilova za .nekretnina, .nekretnina.kuca, .nekretnina.pp i sl., možete razmisliti o zajedničkom stilu i specifičnim izmjenama samo kada je to potrebno. Na primjer, možete dodati zajedničke stilove za .nekretnina i onda samo promijeniti pozadinu za specifične klase:
-
-Dugme (.detalji-dugme):
-
-Iako je dugme u funkciji, može biti korisno dodati efekt pritiska (hover i active stanje) kako bi korisnici imali bolju povratnu informaciju. Na primjer:
-
-css
-Copy code
-.detalji-dugme:hover {
-    background-color: #ff6600;
-}
-
-.detalji-dugme:active {
-    background-color: #cc7a00;
-}
+Ako se već koristi mnogo sličnih stilova za .nekretnina, .nekretnina.kuca, .nekretnina.pp i sl., možemo imati zajednički stil da ne moramo na svakom mjestu ponovo ispravljati ako dođe do promjene. 
