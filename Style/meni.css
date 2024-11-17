@@ -1,0 +1,67 @@
+/* Osnovni stil stranice */
+body {
+    background-color: #fdf1d3;
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+/* Stil za meni */
+ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    background-color: #333;
+    overflow: hidden;
+}
+
+li {
+    float: left;
+    text-align: center;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+}
+
+li a {
+    display: block;
+    color: white;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+    position: relative;
+    line-height: 1.5;
+    height: 40px;
+}
+
+li a img {
+    display: block;
+    margin-top: 5px;
+    width: 24px;
+    height: 24px;
+    transition: transform 1s ease; /* Postavljena tačna 1 sekunda za animaciju */
+    transform-origin: bottom center;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+li a:hover {
+    color: #ff9900;
+}
+
+/* Standardno povećanje za sve linkove osim za 'Nekretnine' */
+li a:hover img {
+    transform: scale(3, 2); /* Povećanje širine više nego visine kako bi ikona prekrila celu širinu */
+}
+
+/* Specifično povećanje za 'Nekretnine' */
+li a[href="nekretnine.html"]:hover img {
+    transform: scale(4.5, 2); /* Povećanje širine i visine tako da ikona prekriva sve karaktere "Nekretnine" */
+}
+
+li a:active img {
+    transform: scale(2.5, 2); /* Manje uvećanje prilikom klika */
+}

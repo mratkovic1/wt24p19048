@@ -1,0 +1,65 @@
+body {
+    background-color: #fdf1d3;
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    background-color: #333;
+    overflow: hidden;
+}
+
+li {
+    float: left;
+    text-align: center;
+    padding: 10px; /* Razmak između menija */
+    display: flex;
+    flex-direction: column; /* Poravnavanje teksta i ikonice u vertikalnom pravcu */
+    align-items: center; /* Centriranje sadržaja */
+    position: relative; /* Bitno za pozicioniranje ikonice */
+}
+
+li a {
+    display: block;
+    color: white;
+    text-align: center;
+    padding: 14px 16px; /* Prostor između teksta i ikone */
+    text-decoration: none;
+    position: relative;
+    line-height: 1.5; /* Viša visina linije, radi lakšeg poravnanja */
+    height: 40px; /* Postavljanje visine linka */
+}
+
+li a img {
+    display: block;
+    margin-top: 5px; /* Razmak između teksta i ikone */
+    width: 24px; /* Početna širina ikonice */
+    height: 24px; /* Početna visina ikonice */
+    transition: transform 1s ease-in-out; /* Animacija za transformaciju */
+    transform-origin: bottom center; /* Uvećanje ikonice počinje od vrha, raste prema gore */
+    position: absolute; /* Apsolutno pozicioniranje ikonice unutar linka */
+    left: 50%; /* Poravnanje ikonice horizontalno sa centrom linka */
+    transform: translateX(-50%); /* Centriranje ikonice na horizontalnoj osi */
+}
+
+li a:hover {
+    color: #ff9900;
+}
+
+/* Standardno povećanje za sve linkove osim za 'Nekretnine' */
+li a:hover img {
+    transform: scale(3, 2); /* Povećanje širine više nego visine kako bi ikona prekrila celu širinu */
+}
+
+/* Povećanje za 'Nekretnine' kako bi prekrila čitav naziv, uključujući 'Ne' */
+li a[href="nekretnine.html"]:hover img {
+    transform: scale(4.5, 2); /* Povećanje širine i visine tako da ikona prekriva sve karaktere "Nekretnine" */
+}
+
+li a:active img {
+    transform: scale(2.5, 2); /* Manje uvećanje prilikom klika */
+}
