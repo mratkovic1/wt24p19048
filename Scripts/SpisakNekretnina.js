@@ -1,14 +1,15 @@
+// SpisakNekretnina.js
+
 let SpisakNekretnina = function () {
-    //privatni atributi modula
+    // privatni atributi modula
     let listaNekretnina = [];
     let listaKorisnika = [];
 
-
-    //implementacija metoda
+    // implementacija metoda
     let init = function (listaNekretnina, listaKorisnika) {
         this.listaNekretnina = listaNekretnina;
         this.listaKorisnika = listaKorisnika;
-    }
+    };
 
     let filtrirajNekretnine = function (kriterij) {
         return this.listaNekretnina.filter(nekretnina => {
@@ -39,16 +40,12 @@ let SpisakNekretnina = function () {
 
             return true;
         });
-    }
-
-    let ucitajDetaljeNekretnine = function (id) {
-        return listaNekretnina.find(nekretnina => nekretnina.id === id) || null;
-    }
-
+    };
 
     return {
         init: init,
-        filtrirajNekretnine: filtrirajNekretnine,
-        ucitajDetaljeNekretnine: ucitajDetaljeNekretnine
-    }
+        filtrirajNekretnine: filtrirajNekretnine
+    };
 };
+
+module.exports = SpisakNekretnina;
