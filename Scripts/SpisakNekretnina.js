@@ -1,39 +1,26 @@
-// SpisakNekretnina.js
-
 let SpisakNekretnina = function () {
-    // privatni atributi modula
+    // Privatni atributi modula
     let listaNekretnina = [];
-    let listaKorisnika = [];
 
-    // implementacija metoda
-    let init = function (listaNekretnina, listaKorisnika) {
-        this.listaNekretnina = listaNekretnina;
-        this.listaKorisnika = listaKorisnika;
+    // Implementacija metoda
+    let init = function (listaNekretninaParam) {
+        listaNekretnina = listaNekretninaParam;
     };
 
     let filtrirajNekretnine = function (kriterij) {
-        return this.listaNekretnina.filter(nekretnina => {
-            // Filtriranje po tipu nekretnine
-            if (kriterij.tip_nekretnine && nekretnina.tip_nekretnine !== kriterij.tip_nekretnine) {
-                return false;
+        return listaNekretnina.filter(nekretnina => {
+            // Filtriranje po datumu objave
+            if (kriterij.datum_objave) {
+                const datumObjave = new Date(nekretnina.datum_objave);
+                if (datumObjave < new Date(kriterij.datum_objave.od) || datumObjave > new Date(kriterij.datum_objave.do)) {
+                    return false;
+                }
             }
 
-            // Filtriranje po minimalnoj kvadraturi
-            if (kriterij.min_kvadratura && nekretnina.kvadratura < kriterij.min_kvadratura) {
-                return false;
-            }
-
-            // Filtriranje po maksimalnoj kvadraturi
-            if (kriterij.max_kvadratura && nekretnina.kvadratura > kriterij.max_kvadratura) {
-                return false;
-            }
-
-            // Filtriranje po minimalnoj cijeni
+            // Filtriranje po cijeni (ako postoji)
             if (kriterij.min_cijena && nekretnina.cijena < kriterij.min_cijena) {
                 return false;
             }
-
-            // Filtriranje po maksimalnoj cijeni
             if (kriterij.max_cijena && nekretnina.cijena > kriterij.max_cijena) {
                 return false;
             }
@@ -48,4 +35,4 @@ let SpisakNekretnina = function () {
     };
 };
 
-module.exports = SpisakNekretnina;
+export default SpisakNekretnina;
