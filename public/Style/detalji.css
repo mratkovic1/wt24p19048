@@ -58,22 +58,27 @@ iframe {
 }
 
 #upiti {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
     border: 1px solid #000;
     padding: 20px;
     margin: 20px;
-    display: block;
 }
 
 .upit {
+    width: calc(33.33% - 10px);
+    box-sizing: border-box;
     border: 1px solid #000;
     padding: 10px;
     background-color: white;
-    box-sizing: border-box;
-    display: none; /* Početno sakrij sve upite */
+    display: none;
 }
 
-.upit:first-child {
-    display: block; /* Početno prikazujemo samo prvi upit */
+@media (max-width: 768px) {
+    .upit {
+        width: 100%; /* Na manjim ekranima prikazuj samo jedan upit */
+    }
 }
 
 .nav-buttons {
@@ -96,15 +101,7 @@ iframe {
     background-color: #ff6600;
 }
 
-/* Osiguranje da gumbi za navigaciju budu prisutni na svim ekranima */
-@media (min-width: 600px) {
-    .nav-buttons {
-        display: block;
-    }
-}
-
-@media (max-width: 600px) {
-    .nav-buttons {
-        display: block;
-    }
+.nav-button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
 }
