@@ -1,12 +1,12 @@
 window.onload = function () {
     const upitiContainer = document.getElementById('upiti');
     const sviUpiti = document.querySelectorAll('.upit');
-    let trenutniUpitIndex = 0;
     const lokacijaLink = document.getElementById('lokacija-link');
     const divNekretnine = document.getElementById('divNekretnine');
+    
+    let trenutniUpitIndex = 0; 
     let sviUcitaniUpiti = sviUpiti.length; // Broj učitanih upita
     let sviUpitiUcitani = false; // Indikator da li su svi upiti učitani
-
     // Klik na link za lokaciju, učitavanje nekretnina
     document.getElementById('lokacija-link').addEventListener('click', function (event) {
         event.preventDefault(); // Spriječava zadano ponašanje linka
@@ -50,29 +50,45 @@ window.onload = function () {
             container.appendChild(div);
         });
     }
+      // Funkcija za prikaz upita
+      function prikaziUpite() {
+        // Sakrij sve upite
+        sviUpiti.forEach(upit => upit.style.display = 'none');
 
+        // Broj upita po stranici
+        let brojUpitaNaStranici = 3;
 
-     function prikaziUpit(indeks) {
-        sviUpiti.forEach(upit => upit.style.display = 'none');  // Sakrij sve upite
+        // Izračunaj redoslijed prikaza upita na trenutnoj stranici (obrnut redoslijed)
+        let pocetakIndex = sviUpiti.length - (trenutniUpitIndex + brojUpitaNaStranici);
+        if (pocetakIndex < 0) {
+            pocetakIndex = 0;
+        }
 
-        if (indeks >= 0 && indeks < sviUpiti.length) {
-            sviUpiti[indeks].style.display = 'block';  // Prikazivanje trenutnog upita
+        // Na zadnjoj stranici, prikazujemo samo preostale upite, ne popunjavamo do 3
+        let brojPreostalihUpita = sviUpiti.length - trenutniUpitIndex;
+        if (trenutniUpitIndex + brojUpitaNaStranici > sviUpiti.length) {
+            brojUpitaNaStranici = brojPreostalihUpita; // Ako preostali upiti nisu dovoljni za 3, prikazujemo samo preostale
+        }
+
+        // Prikazivanje upita na trenutnoj stranici
+        for (let i = pocetakIndex; i < pocetakIndex + brojUpitaNaStranici; i++) {
+            sviUpiti[i].style.display = 'block';
         }
 
         // Onemogući/omogući dugmadi za navigaciju
-        document.getElementById('prev').disabled = (trenutniUpitIndex <= 0);
-        document.getElementById('next').disabled = (trenutniUpitIndex >= sviUpiti.length - 1);
+        document.getElementById('prev').disabled = (trenutniUpitIndex <= 0);  // Onemogući "Prethodni" na prvoj stranici
+        document.getElementById('next').disabled = (trenutniUpitIndex + brojUpitaNaStranici >= sviUpiti.length);  // Onemogući "Sljedeći" kada su svi upiti učitani
     }
 
     // Sljedeći upit
     function sljedeciUpit() {
-        if (trenutniUpitIndex < sviUpiti.length - 1) {
-            trenutniUpitIndex++;
-            prikaziUpit(trenutniUpitIndex);
+        if (trenutniUpitIndex + 3 < sviUpiti.length) {
+            trenutniUpitIndex += 3;
+            prikaziUpite();
         }
 
-        // Ako smo došli do zadnjeg učitanog upita i nismo učitali sve upite
-        if (trenutniUpitIndex >= sviUpiti.length - 1 && !sviUpitiUcitani) {
+        // Ako smo došli do zadnje učitane stranice i nismo učitali sve upite
+        if (trenutniUpitIndex + 3 >= sviUpiti.length && !sviUpitiUcitani) {
             PoziviAjax.getNextUpiti(sviUcitaniUpiti, function (error, noviUpiti) {
                 if (error) {
                     console.error("Greška pri dohvaćanju novih upita:", error);
@@ -83,10 +99,9 @@ window.onload = function () {
                     noviUpiti.forEach(function (noviUpit) {
                         const upitDiv = document.createElement('div');
                         upitDiv.classList.add('upit');
-                        upitDiv.innerHTML = ` 
-                            <p><strong>${noviUpit.username}:</strong></p>
-                            <p>${noviUpit.text}</p>
-                        `;
+                        upitDiv.innerHTML =  
+                            `<p><strong>${noviUpit.username}:</strong></p>
+                             <p>${noviUpit.text}</p>`;
                         upitiContainer.appendChild(upitDiv);
                     });
 
@@ -98,7 +113,7 @@ window.onload = function () {
                         sviUpitiUcitani = true;  // Nema više novih upita
                     }
 
-                    prikaziUpit(trenutniUpitIndex);  // Prikazujemo trenutni upit
+                    prikaziUpite();  // Prikazujemo trenutni upit
                 }
             });
         }
@@ -106,19 +121,19 @@ window.onload = function () {
 
     // Prethodni upit
     function prethodniUpit() {
-        if (trenutniUpitIndex > 0) {
-            trenutniUpitIndex--;
-            prikaziUpit(trenutniUpitIndex);
+        if (trenutniUpitIndex - 3 >= 0) {
+            trenutniUpitIndex -= 3;
+            prikaziUpite();
         }
     }
 
     // Inicijalizacija
-    prikaziUpit(trenutniUpitIndex);
+    prikaziUpite();  // Početno prikazivanje upita (prvi 3 na prvoj stranici)
     document.getElementById('prev').onclick = prethodniUpit;
     document.getElementById('next').onclick = sljedeciUpit;
 
     // Provjera veličine ekrana prilikom učitavanja stranice i promjena veličine
     window.onresize = function () {
-        prikaziUpit(trenutniUpitIndex); // Osigurajte da prikazujemo trenutni upit
+        prikaziUpite(); // Osigurajte da prikazujemo trenutni upit
     };
 };
