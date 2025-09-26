@@ -89,6 +89,28 @@
             <button id="prev" class="nav-button" disabled>&lt; Prethodni</button>
             <button id="next" class="nav-button">Sljedeći &gt;</button>
         </div>
+        <h3>Dodaj novo interesovanje</h3>
+<form id="form-interesovanje">
+    <label for="tip">Tip interesovanja:</label>
+    <select id="tip" name="tip">
+        <option value="upit">Upit</option>
+        <option value="zahtjev">Zahtjev</option>
+        <option value="ponuda">Ponuda</option>
+    </select>
+
+    <div id="ponuda-fields" style="display: none;">
+        <label for="ponuda-id">Vezana ponuda:</label>
+        <select id="ponuda-id" name="ponuda-id" disabled>
+            <!-- Opcije će biti popunjene putem JavaScript-a -->
+        </select>
+    </div>
+
+    <label for="tekst">Tekst:</label>
+    <textarea id="tekst" name="tekst" rows="4" required></textarea>
+
+    <button type="submit">Dodaj interesovanje</button>
+</form>
+
       
     </div>
 

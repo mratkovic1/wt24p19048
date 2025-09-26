@@ -3,11 +3,86 @@ window.onload = function () {
     const sviUpiti = document.querySelectorAll('.upit');
     const lokacijaLink = document.getElementById('lokacija-link');
     const divNekretnine = document.getElementById('divNekretnine');
+    const tipSelect = document.getElementById('tip');
+    const ponudaFields = document.getElementById('ponuda-fields');
+    const ponudaIdSelect = document.getElementById('ponuda-id');
+    const formInteresovanje = document.getElementById('form-interesovanje');
+
+    tipSelect.addEventListener('change', function () {
+        const tip = this.value;
+        if (tip === 'ponuda') {
+            ponudaFields.style.display = 'block';
+            // Pozovi funkciju za popunjavanje ponuda na osnovu korisnika
+            popuniPonude();
+        } else {
+            ponudaFields.style.display = 'none';
+        }
+    });
+
+    // Funkcija za popunjavanje dropdown-a za ponude
+    function popuniPonude() {
+        // Ako je korisnik admin, učitaj sve ponude vezane za nekretninu
+        // Ako je korisnik običan, učitaj samo ponude koje je on napravio
+        const userId = getUserId();  // Pretpostavljamo funkciju koja vraća korisnički ID
+        PoziviAjax.getPonudeZaKorisnika(userId, function (error, ponude) {
+            if (error) {
+                console.error("Greška pri dohvaćanju ponuda:", error);
+                return;
+            }
+
+            ponudaIdSelect.innerHTML = ''; // Očisti postojeće opcije
+            if (ponude && ponude.length > 0) {
+                ponude.forEach(function (ponuda) {
+                    const option = document.createElement('option');
+                    option.value = ponuda.id;
+                    option.textContent = `Ponuda ID: ${ponuda.id}`;
+                    ponudaIdSelect.appendChild(option);
+                });
+
+                ponudaIdSelect.disabled = false;
+            } else {
+                ponudaIdSelect.disabled = true;
+            }
+        });
+    }
+
+    // Funkcija za obradu forme
+    formInteresovanje.addEventListener('submit', function (event) {
+        event.preventDefault();  // Spriječava reload stranice
+
+        const tip = tipSelect.value;
+        const tekst = document.getElementById('tekst').value;
+        const ponudaId = ponudaIdSelect.value;
+
+        const podaci = {
+            tip: tip,
+            tekst: tekst,
+            ponudaId: (tip === 'ponuda' ? ponudaId : null)
+        };
+
+        // Pozovi Ajax za slanje podataka
+        PoziviAjax.dodajInteresovanje(podaci, function (error, odgovor) {
+            if (error) {
+                console.error("Greška pri dodavanju interesovanja:", error);
+                alert("Došlo je do greške. Pokušajte ponovo.");
+                return;
+            }
+
+            alert("Interesovanje je uspješno dodano.");
+            formInteresovanje.reset();  // Resetuje formu nakon slanja
+        });
+    });
+
+    // Početno pozivanje funkcije za popunjavanje ponuda ako je korisnik već izabrao "ponuda"
+    if (tipSelect.value === 'ponuda') {
+        popuniPonude();
+    }
     
     let trenutniUpitIndex = 0; 
     let sviUcitaniUpiti = sviUpiti.length; // Broj učitanih upita
     let sviUpitiUcitani = false; // Indikator da li su svi upiti učitani
     // Klik na link za lokaciju, učitavanje nekretnina
+
     document.getElementById('lokacija-link').addEventListener('click', function (event) {
         event.preventDefault(); // Spriječava zadano ponašanje linka
 

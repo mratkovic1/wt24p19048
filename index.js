@@ -1,20 +1,33 @@
 const express = require('express');
 const session = require("express-session");
+
 const path = require('path');
 const fs = require('fs').promises; // Using asynchronus API for file read and write
 const bcrypt = require('bcrypt');
 
+const sequelize = require("./config/baza");  // Importuj konekciju
+const { Korisnik, Nekretnina, Upit, Zahtjev, Ponuda } = require("./modeli/models");  // Importuj modele
+require("./relacije/relacije")();  // Pozivamo funkciju koja postavlja sve relacije
+function isAdmin(req, res, next) {
+  if (req.user && req.user.admin) {
+    return next();
+  }
+  return res.status(403).json({ message: 'Forbidden' });
+}
+const moment = require('moment');
 const app = express();
+
 const PORT = 3000;
 const attemptLimit = 3; // Maksimalan broj pokušaja prijave
 const lockTime = 60 * 1000; // Blokada traje 1 minut
+app.use(express.json()); 
 
 app.use(session({
   secret: 'tajna sifra',
   resave: true,
   saveUninitialized: true,
-
 }));
+
 
 app.use(express.static(__dirname + '/public'));
 
@@ -83,61 +96,51 @@ If the data is correct, the username is saved in the session and a success messa
 */
 const loginAttempts = {};  // Pratimo broj pokušaja za svakog korisnika (u memoriji)
 
+// POST /login - Prijava korisnika
 app.post('/login', async (req, res) => {
+  
   const jsonObj = req.body;
   const username = jsonObj.username;
 
   try {
-    // Proverite da li korisnik ima više od 3 pokušaja
-    if (loginAttempts[username] && loginAttempts[username].count >= 3) {
-      const timeSinceLastAttempt = Date.now() - loginAttempts[username].lastAttempt;
-      if (timeSinceLastAttempt < 60000) {
-        // Ako su pokušaji bili pre manje od 1 minute, blokiramo korisnika
-        return res.status(429).json({ greska: "Previše neuspješnih pokušaja. Pokušajte ponovo za 1 minutu." });
-      } else {
-        // Resetujemo broj pokušaja nakon 1 minute
-        loginAttempts[username] = { count: 0, lastAttempt: Date.now() };
-      }
-    }
-    const data = await fs.readFile(path.join(__dirname, 'data', 'korisnici.json'), 'utf-8');
-    const korisnici = JSON.parse(data);
-    let found = false;
-
-    for (const korisnik of korisnici) {
-      if (korisnik.username == username) {
-        const isPasswordMatched = await bcrypt.compare(jsonObj.password, korisnik.password);
-
-        if (isPasswordMatched) {
-          req.session.username = korisnik.username;
-          found = true;
-          break;
-        }
-      }
+    const korisnik = await Korisnik.findOne({ where: { username } });
+    
+    if (!korisnik) {
+      return res.status(401).json({ poruka: 'Neuspješna prijava' });
     }
 
-    // Logovanje pokušaja prijave u fajl
-    const timestamp = new Date().toISOString();
-    const logMessage = `[${timestamp}] - username: "${jsonObj.username}" - status: "${found ? 'uspješno' : 'neuspješno'}"\n`;
-    await fs.appendFile('prijave.txt', logMessage);
-
-    if (found) {
-      // Resetujemo broj pokušaja na 0 ako je prijava uspešna
-      loginAttempts[username] = { count: 0, lastAttempt: Date.now() };
-      res.json({ poruka: 'Uspješna prijava' });
-    } else {
-      // Povećavamo broj pokušaja ako je prijava neuspešna
-      if (!loginAttempts[username]) {
-        loginAttempts[username] = { count: 0, lastAttempt: Date.now() };
-      }
-      loginAttempts[username].count++;
-
-      res.json({ poruka: 'Neuspješna prijava' });
+    const isPasswordMatched = await bcrypt.compare(jsonObj.password, korisnik.password);
+    if (isPasswordMatched) {
+      req.session.username = korisnik.username;
+      return res.json({ poruka: 'Uspješna prijava' });
     }
+
+    res.status(401).json({ poruka: 'Neuspješna prijava' });
   } catch (error) {
     console.error('Greška tokom prijave:', error);
     res.status(500).json({ greska: 'Internal Server Error' });
   }
-});
+});  function impl_postLogin(username, password, fnCallback) {
+        var ajax = new XMLHttpRequest()
+
+        ajax.onreadystatechange = function () {
+            if (ajax.readyState == 4 && ajax.status == 200) {
+                fnCallback(null, ajax.response)
+            }
+            else if (ajax.readyState == 4) {
+                //desio se neki error
+                fnCallback(ajax.statusText, null)
+            }
+        }
+        ajax.open("POST", "http://localhost:3000/login", true)
+        ajax.setRequestHeader("Content-Type", "application/json")
+        var objekat = {
+            "username": username,
+            "password": password
+        }
+        forSend = JSON.stringify(objekat)
+        ajax.send(forSend)
+    }
 
 /*
 Delete everything from the session.
@@ -165,42 +168,261 @@ Returns currently logged user data. First takes the username from the session an
 from the .json file.
 */
 app.get('/korisnik', async (req, res) => {
-  // Check if the username is present in the session
   if (!req.session.username) {
-    // User is not logged in
     return res.status(401).json({ greska: 'Neautorizovan pristup' });
   }
 
-  // User is logged in, fetch additional user data
   const username = req.session.username;
 
   try {
-    // Read user data from the JSON file
-    const users = await readJsonFile('korisnici');
+    const korisnik = await Korisnik.findOne({ where: { username } });
 
-    // Find the user by username
-    const user = users.find((u) => u.username === username);
-
-    if (!user) {
-      // User not found (should not happen if users are correctly managed)
+    if (!korisnik) {
       return res.status(401).json({ greska: 'Neautorizovan pristup' });
     }
 
-    // Send user data
     const userData = {
-      id: user.id,
-      ime: user.ime,
-      prezime: user.prezime,
-      username: user.username,
-      password: user.password // Should exclude the password for security reasons
+      id: korisnik.id,
+      ime: korisnik.ime,
+      prezime: korisnik.prezime,
+      username: korisnik.username
     };
 
     res.status(200).json(userData);
   } catch (error) {
-    console.error('Error fetching user data:', error);
+    console.error('Greška pri dohvaćanju korisničkih podataka:', error);
     res.status(500).json({ greska: 'Internal Server Error' });
   }
 });
+
+
+app.get('/nekretnina/:id/interesovanja', async (req, res) => {
+  const nekretninaId = req.params.id; // ID nekretnine
+  const loggedInUser = req.session.username; // Korisnik koji je prijavljen (pretpostavljamo da koristiš sesiju za autentifikaciju)
+
+  try {
+    // Dohvati nekretninu iz baze podataka sa povezanim ponudama i korisnicima
+    const nekretnina = await Nekretnina.findByPk(nekretninaId, {
+      include: [
+        {
+          model: Ponuda,  // Uključujemo sve ponude vezane za ovu nekretninu
+          include: {
+            model: Korisnik,  // Uključujemo korisnike koji su postavili ponude
+            attributes: ['username']
+          }
+        }
+      ]
+    });
+
+    if (!nekretnina) {
+      return res.status(404).json({ greska: 'Nekretnina nije pronađena' });
+    }
+
+    // Provera da li je korisnik admin (ili neka druga validacija)
+    const isAdmin = loggedInUser === 'admin';
+
+    // Filtriranje ponuda
+    const filteredPonude = nekretnina.Ponudas.map(ponuda => {
+      const ponudaJson = ponuda.toJSON();  // Pretvaramo ponudu u JSON format
+
+      if (!isAdmin) {
+        // Ako korisnik nije admin, sakrij cijenu ponude osim ako je ponuda postavljena od strane korisnika
+        if (loggedInUser && (ponudaJson.Korisnik.username === loggedInUser)) {
+          return ponudaJson;  // Vratiti cijelu ponudu ako je postavio korisnik
+        } else {
+          const { cijenaPonude, ...rest } = ponudaJson;  // Ukloniti cijenu ako nije vezana za korisnika
+          return rest;
+        }
+      }
+
+      return ponudaJson;  // Ako je admin, vratiti sve ponude sa cijenama
+    });
+
+    // Vraćamo filtrirane ponude
+    res.status(200).json(filteredPonude);
+
+  } catch (error) {
+    console.error('Greška pri dohvaćanju interesovanja:', error);
+    res.status(500).json({ greska: 'Internal Server Error' });
+  }
+});
+
+
+// Kreiranje ponude
+app.post('/nekretnina/:id/ponuda', async (req, res) => {
+  const { id } = req.params;
+  const { tekst, ponudaCijene, datumPonude, idVezanePonude, odbijenaPonuda } = req.body;
+
+  try {
+    // Provjera da li nekretnina postoji
+    const nekretnina = await Nekretnina.findByPk(id);
+    if (!nekretnina) {
+      return res.status(404).json({ message: 'Nekretnina nije pronađena' });
+    }
+
+    // Provjera korisničkih kredencijala
+    const korisnik = await Korisnik.findByPk(req.user.id);
+    if (!korisnik) {
+      return res.status(404).json({ message: 'Korisnik nije pronađen' });
+    }
+    
+
+    // Ako ponuda nije vezana, to je početna ponuda korisnika
+    const novaPonuda = await Ponuda.create({
+      cijenaPonude: ponudaCijene,
+      datumPonude,
+      odbijenaPonuda,
+      korisnikId: korisnik.id,
+      nekretninaId: nekretnina.id,
+      vezanaPonudaId: idVezanePonude || null,
+    });
+
+    // Ako je ponuda vezana za prethodnu, provjeravamo da li je odbijena
+    if (idVezanePonude) {
+      const vezanaPonuda = await Ponuda.findByPk(idVezanePonude);
+      if (vezanaPonuda && vezanaPonuda.odbijenaPonuda) {
+        return res.status(400).json({ message: 'Ponuda nije prihvaćena, ne možete dodati novu.' });
+      }
+    }
+
+    return res.status(201).json(novaPonuda);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Došlo je do greške' });
+  }
+});
+
+// Admin može odbiti ponudu ili ponuditi novu cijenu
+app.post('/admin/ponuda/:id/odgovori', isAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { ponudaCijene, odbijenaPonuda } = req.body;
+
+  try {
+    // Provjera da li ponuda postoji
+    const ponuda = await Ponuda.findByPk(id);
+    if (!ponuda) {
+      return res.status(404).json({ message: 'Ponuda nije pronađena' });
+    }
+
+    // Provjera da li ponuda već ima status odbijena
+    if (ponuda.odbijenaPonuda) {
+      return res.status(400).json({ message: 'Ova ponuda je odbijena, ne možete dodati novu.' });
+    }
+
+    // Kreiramo novu ponudu kao odgovor
+    const novaPonuda = await Ponuda.create({
+      cijenaPonude: ponudaCijene,
+      datumPonude: new Date(),
+      odbijenaPonuda,
+      korisnikId: req.user.id,
+      nekretninaId: ponuda.nekretninaId,
+      vezanaPonudaId: ponuda.id,
+    });
+
+    return res.status(201).json(novaPonuda);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Došlo je do greške' });
+  }
+});
+
+const provjeraAdmin = (req, res, next) => {
+  if (req.user && req.user.admin) {
+    return res.status(403).json({ greska: 'Admin korisnik ne moze slati zahtjeve.' });
+  }
+  next();
+};
+
+app.post('/nekretnina/:id/zahtjev', provjeraAdmin, async (req, res) => {
+  try {
+    const { tekst, trazeniDatum } = req.body;
+    const { id } = req.params;
+
+    // Provjera postoji li nekretnina s tim id-em
+    const nekretnina = await Nekretnina.findByPk(id);
+    if (!nekretnina) {
+      return res.status(404).json({ greska: 'Nekretnina s tim ID-om ne postoji.' });
+    }
+
+    // Provjera validnosti trazenog datuma
+    if (!moment(trazeniDatum, 'YYYY-MM-DD', true).isValid()) {
+      return res.status(400).json({ greska: 'Neispravan format datuma.' });
+    }
+
+    // Provjera je li trazeni datum manji od trenutnog
+    if (moment(trazeniDatum).isBefore(moment(), 'day')) {
+      return res.status(400).json({ greska: 'Trazeni datum ne moze biti u proslosti.' });
+    }
+
+    // Provjera je li korisnik prijavljen
+    const korisnik = req.user;  // Pretpostavljamo da korisnik dolazi iz autentifikacije (npr. JWT)
+
+    // Kreiranje novog zahtjeva
+    const noviZahtjev = await Zahtjev.create({
+      tekst_upita: tekst,
+      trazeniDatum,
+      korisnikId: korisnik.id,
+      nekretninaId: nekretnina.id
+    });
+
+    res.status(201).json({ poruka: 'Zahtjev uspješno kreiran.', zahtjev: noviZahtjev });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ greska: 'Došlo je do greške prilikom kreiranja zahtjeva.' });
+  }
+});
+
+const provjeriAdmina = (req, res, next) => {
+  if (req.user && req.user.admin) {
+    return next();
+  } else {
+    return res.status(403).json({ greska: 'Samo admin može izvršiti ovu akciju.' });
+  }
+};
+
+// PUT ruta za ažuriranje zahtjeva
+app.put('/nekretnina/:id/zahtjev/:zid', provjeriAdmina, async (req, res) => {
+  const { odobren, addToTekst } = req.body;
+  
+  if (odobren === undefined) {
+    return res.status(400).send("Moraš navesti parametar 'odobren'.");
+  }
+  
+  if (odobren === false && !addToTekst) {
+    return res.status(400).send("Kada je zahtjev odbijen, moraš navesti 'addToTekst'.");
+  }
+  
+  try {
+    // Dohvati zahtjev iz baze
+    const zahtjev = await Zahtjev.findOne({
+      where: {
+        id: req.params.zid,
+        nekretninaId: req.params.id,
+      },
+    });
+
+    if (!zahtjev) {
+      return res.status(404).send("Zahtjev nije pronađen.");
+    }
+
+    // Ažuriranje zahtjeva
+    zahtjev.odobren = odobren;
+    
+    if (odobren === false && addToTekst) {
+      zahtjev.tekst_upita += ` ODGOVOR ADMINA: ${addToTekst}`;
+    }
+
+    await zahtjev.save();
+
+    return res.status(200).send("Zahtjev uspješno ažuriran.");
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Došlo je do greške pri ažuriranju zahtjeva.");
+  }
+});
+
+
+
 
 /*
 Allows logged user to make a request for a property
@@ -284,68 +506,51 @@ app.get('/upiti/moji', async (req, res) => {
   }
 });
 
+const dodajUpit = async (korisnik_id, nekretnina_id, tekst_upita) => {
+  // Dodajemo logiku koja čuva upit u bazu, ovo je samo primer
+  const nekretnina = await baza.dohvatiNekretninuPoId(nekretnina_id);
+  if (!nekretnina) {
+    throw new Error('Nekretnina nije pronađena');
+  }
+
+  nekretnina.upiti.push({ korisnik_id, tekst_upita });
+  await baza.spasiNekretnine(nekretnina); // Spasavanje promjena
+};
 
 const upitiPoKorisniku = {}; 
 app.post('/upit', async (req, res) => {
-  // Check if the user is authenticated
-  if (!req.session.user) {
-    // User is not logged in
+  if (!req.session.username) {
     return res.status(401).json({ greska: 'Neautorizovan pristup' });
   }
 
-  // Get data from the request body
   const { nekretnina_id, tekst_upita } = req.body;
+  const korisnik = await Korisnik.findOne({ where: { username: req.session.username } });
+
+  if (!korisnik) {
+    return res.status(401).json({ greska: 'Korisnik nije pronađen' });
+  }
 
   try {
-    // Read user data from the JSON file
-    const users = await readJsonFile('korisnici');
-
-    // Read properties data from the JSON file
-    const nekretnine = await readJsonFile('nekretnine');
-
-    // Find the user by username
-    const loggedInUser = users.find((user) => user.username === req.session.user.username);
-    if (!loggedInUser) {
-      return res.status(404).json({ greska: 'Korisnik nije pronađen' });
-    }
-    // Check if the property with nekretnina_id exists
-    const nekretnina = nekretnine.find((property) => property.id === nekretnina_id);
-
+    const nekretnina = await Nekretnina.findByPk(nekretnina_id);
     if (!nekretnina) {
-      // Property not found
-      return res.status(400).json({ greska: `Nekretnina sa id-em ${nekretnina_id} ne postoji` });
-    }
-    if (!upitiPoKorisniku[loggedInUser.id]) {
-      upitiPoKorisniku[loggedInUser.id] = {};
+      return res.status(404).json({ greska: 'Nekretnina nije pronađena' });
     }
 
-    if (!upitiPoKorisniku[loggedInUser.id][nekretnina_id]) {
-      upitiPoKorisniku[loggedInUser.id][nekretnina_id] = 0;
-    }
-
-    // Proveri broj upita
-    if (upitiPoKorisniku[loggedInUser.id][nekretnina_id] >= 3) {
-      return res.status(429).json({ greska: 'Previše upita za istu nekretninu.' });
-    }
-
-    // Povećaj broj upita za ovu nekretninu
-    upitiPoKorisniku[loggedInUser.id][nekretnina_id]++;
-
-    // Add a new query to the property's queries array
-    nekretnina.upiti.push({
-      korisnik_id: loggedInUser.id,
-      tekst_upita: tekst_upita
+    // Kreiramo upit i povezujemo ga sa korisnikom i nekretninom
+    await Upit.create({
+      tekst_upita,
+      korisnik_id: korisnik.id,
+      nekretnina_id: nekretnina.id
     });
-
-    // Save the updated properties data back to the JSON file
-    await saveJsonFile('nekretnine', nekretnine);
 
     res.status(200).json({ poruka: 'Upit je uspješno dodan' });
   } catch (error) {
-    console.error('Error processing query:', error);
+    console.error('Greška pri dodavanju upita:', error);
     res.status(500).json({ greska: 'Internal Server Error' });
   }
 });
+
+
 
 /*
 Updates any user field
@@ -400,17 +605,21 @@ app.get('/nekretnina/:id', async (req, res) => {
   const { id } = req.params;
 
   try {
-    const nekretnine = await readJsonFile('nekretnine');
-    const nekretnina = nekretnine.find(n => n.id === parseInt(id));
+    const nekretnina = await Nekretnina.findByPk(id, {
+      include: {
+        model: Upit,
+        include: Korisnik,  // Uključivanje korisnika koji je postavio upit
+        attributes: ['username', 'tekst_upita']
+      }
+    });
 
     if (!nekretnina) {
       return res.status(404).json({ greska: "Nekretnina nije pronađena" });
     }
 
-    // Skraćujemo listu upita na posljednja 3
-    const poslednja3Upita = nekretnina.upiti.slice(-3);
+    // Skraćujemo listu upita na poslednja 3
+    const poslednja3Upita = nekretnina.Upits.slice(-3);
 
-    // Vraćamo detalje nekretnine sa skraćenom listom upita
     const nekretninaDetalji = {
       id: nekretnina.id,
       tip_nekretnine: nekretnina.tip_nekretnine,
@@ -434,41 +643,48 @@ app.get('/nekretnina/:id', async (req, res) => {
 
 
 
+
 app.get('/nekretnine', async (req, res) => {
   try {
-    const nekretnineData = await readJsonFile('nekretnine');
-    res.json(nekretnineData);
+    const nekretnine = await Nekretnina.findAll({
+      include: [{
+        model: Upit,
+        attributes: ['tekst_upita']
+      }]
+    });
+
+    res.status(200).json(nekretnine);
   } catch (error) {
-    console.error('Error fetching properties data:', error);
+    console.error('Greška pri dohvatanju nekretnina:', error);
     res.status(500).json({ greska: 'Internal Server Error' });
   }
 });
-// Route to get top 5 properties based on location
+
 app.get('/nekretnine/top5', async (req, res) => {
-  const lokacija = req.query.lokacija; // Get the location from the query parameter
+  const lokacija = req.query.lokacija;
 
   if (!lokacija) {
     return res.status(400).json({ greska: "Lokacija je obavezna" });
   }
 
   try {
-    const nekretnineData = await readJsonFile('nekretnine'); // Read properties from nekretnine.json
+    const nekretnine = await Nekretnina.findAll({
+      where: {
+        lokacija: {
+          [Sequelize.Op.iLike]: lokacija
+        }
+      },
+      limit: 5,
+      order: [['datum_objave', 'DESC']]
+    });
 
-    // Filter properties based on the provided location
-    const filteredProperties = nekretnineData.filter(property => property.lokacija && property.lokacija.toLowerCase() === lokacija.toLowerCase());
-
-    // Get the last 5 properties (sorted by publication date)
-    const top5Properties = filteredProperties
-      .sort((a, b) => new Date(b.datumObjave) - new Date(a.datumObjave)) // Sort by publication date, newest first
-      .slice(0, 5); // Get the first 5
-
-    if (top5Properties.length === 0) {
+    if (nekretnine.length === 0) {
       return res.status(404).json({ greska: "Nema nekretnina na ovoj lokaciji" });
     }
 
-    res.status(200).json(top5Properties); // Send the filtered properties in response
+    res.status(200).json(nekretnine);
   } catch (error) {
-    console.error('Error fetching top 5 properties:', error);
+    console.error('Greška pri dohvaćanju top 5 nekretnina:', error);
     res.status(500).json({ greska: 'Internal Server Error' });
   }
 });
@@ -581,8 +797,19 @@ app.post('/marketing/osvjezi/klikovi', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
-
-// Start server
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+app.get("/", (req, res) => {
+  res.send("Pozdrav iz aplikacije!");
 });
+
+sequelize.sync({ force: true })  // Ako je potrebno, setuj `force: true` da izbrišeš postojeće tabele i kreiraš nove
+  .then(() => {
+    console.log("Baza podataka je uspešno sinhronizovana.");
+    // Pokretanje servera
+    app.listen(PORT, () => {
+      console.log("Server je pokrenut na portu 3000");
+    });
+  })
+  .catch((error) => {
+    console.error("Greška pri sinhronizaciji sa bazom:", error);
+  });
+// Start server
